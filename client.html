@@ -1,166 +1,184 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
-    <!-- ビューポートの設定：モバイルデバイスでの表示を最適化 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>旅行プランTODO</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
+            max-width: 800px;
+            margin: 0 auto;
             padding: 20px;
         }
-        button {
-            background-color: lightblue;
-            border: none;
-            color: white;
-            padding: 10px;
-            cursor: pointer;
-            margin: 5px;
+        .todo-form {
+            margin: 1rem 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
         }
-        button:hover {
-            background-color: #66ccff;
+        .form-group {
+            margin-bottom: 10px;
         }
-        ul {
-            list-style: none;
-            padding: 0;
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
         }
         .todo-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background-color: #fff;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        input[type="text"], input[type="number"] {
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 10px;
-            width: 100%;
+        .completed {
+            text-decoration: line-through;
+            color: gray;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-btn {
+            background-color: #f44336;
         }
     </style>
 </head>
-
 <body>
-    <h1>旅行プラン管理</h1>
+    <h1>旅行プランTODO</h1>
 
-    <h2>旅行プラン</h2>
-    <div>
-        <h3>日数: <input type="number" id="day" placeholder="日数" required min="1"></h3>
-        <h3>場所・交通手段・費用</h3>
-        <form id="placeForm">
-            <input type="text" id="location" placeholder="場所" required>
-            <input type="text" id="time" placeholder="時間（例: 10:00〜10:30）" required>
-            <input type="text" id="transport" placeholder="交通手段（例: 車）" required>
-            <input type="number" id="cost" placeholder="費用" required min="0">
-            <button type="submit">追加</button>
-        </form>
-
-        <ul id="placeList"></ul>
-    </div>
-
-    <h2>ほしいものリスト</h2>
-    <form id="wishlistForm">
-        <input type="text" id="item_name" placeholder="アイテム名" required>
-        <input type="number" id="item_cost" placeholder="金額" required min="0">
+    <form id="todoForm" class="todo-form">
+        <div class="form-group">
+            <label for="todoDate">日付:</label>
+            <input type="date" id="todoDate" required>
+        </div>
+        <div class="form-group">
+            <label for="todoDestination">行先:</label>
+            <input type="text" id="todoDestination" required>
+        </div>
+        <div class="form-group">
+            <label for="todoLocation">場所:</label>
+            <input type="text" id="todoLocation" required>
+        </div>
+        <div class="form-group">
+            <label for="todoInput">やること:</label>
+            <input type="text" id="todoInput" required>
+        </div>
         <button type="submit">追加</button>
     </form>
-    <ul id="wishlistList"></ul>
 
-    <h2>合計金額: <span id="totalCost">0</span>円</h2>
+    <ul id="todoList" style="list-style: none; padding: 0;"></ul>
 
     <script>
-        const API_URL = 'http://localhost:8000';
+        const API_URL = '/todos';
 
-        // API通信を行う汎用関数
+        // API通信用の関数
         async function api(endpoint, options = {}) {
-            const response = await fetch(endpoint, options);
-            if (!response.ok) throw new Error('APIエラー');
-            return response.json();
+            try {
+                const response = await fetch(endpoint, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                if (!response.ok) throw new Error('API error');
+                return response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                alert('エラーが発生しました');
+            }
         }
 
-        // 旅行プランを追加する関数
-        async function addPlace() {
-            const day = document.getElementById('day').value;
-            const location = document.getElementById('location').value;
-            const time = document.getElementById('time').value;
-            const transport = document.getElementById('transport').value;
-            const cost = document.getElementById('cost').value;
-
-            await api(`${API_URL}/places`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ day, location, time, transport, cost })
-            });
-
-            await loadPlaces();  // データ追加後に再読み込み
-        }
-
-        // ほしいものリストを追加する関数
-        async function addWishlistItem() {
-            const item_name = document.getElementById('item_name').value;
-            const item_cost = document.getElementById('item_cost').value;
-
-            await api(`${API_URL}/wishlist`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ item_name, item_cost })
-            });
-
-            await loadWishlist();  // データ追加後に再読み込み
-        }
-
-        // 旅行プランを読み込む関数
-        async function loadPlaces() {
-            const places = await api(`${API_URL}/places`);
-            document.getElementById('placeList').innerHTML = places.map(place => `
+        // TODOアイテムのHTML生成
+        function renderTodo(todo) {
+            return `
                 <li class="todo-item">
-                    <span>${place.time} - ${place.location} (${place.transport}) - ¥${place.cost}</span>
+                    <div>
+                        <p><strong>日付:</strong> ${todo.date}</p>
+                        <p><strong>行先:</strong> ${todo.destination}</p>
+                        <p><strong>場所:</strong> ${todo.location}</p>
+                        <p class="${todo.completed ? 'completed' : ''}">
+                            <strong>やること:</strong> ${todo.title}
+                        </p>
+                    </div>
+                    <div>
+                        <input type="checkbox" 
+                               ${todo.completed ? 'checked' : ''} 
+                               onchange="toggleTodo(${todo.id}, this.checked)">
+                        <button class="delete-btn" onclick="deleteTodo(${todo.id})">削除</button>
+                    </div>
                 </li>
-            `).join('');
-            loadTotalCost();  // ここで合計金額を更新
+            `;
         }
 
-        // ほしいものリストを読み込む関数
-        async function loadWishlist() {
-            const wishlist = await api(`${API_URL}/wishlist`);
-            document.getElementById('wishlistList').innerHTML = wishlist.map(item => `
-                <li class="todo-item">
-                    <span>${item.item_name} - ¥${item.cost}</span>
-                </li>
-            `).join('');
-            loadTotalCost();  // ここで合計金額を更新
+        // TODOリストの読み込み
+        async function loadTodos() {
+            const todos = await api(API_URL);
+            if (todos) {
+                document.getElementById('todoList').innerHTML =
+                    todos.map(renderTodo).join('');
+            }
         }
 
-         // 合計金額を更新する関数
-        async function loadTotalCost() {
-            const total = await api(`${API_URL}/total_cost`);
-            document.getElementById('totalCost').innerText = total.total_cost;
+        // TODOの追加
+        async function addTodo(todoData) {
+            await api(API_URL, {
+                method: 'POST',
+                body: JSON.stringify(todoData)
+            });
+            loadTodos();
         }
 
+        // TODOの完了状態の切り替え
+        async function toggleTodo(id, completed) {
+            const todo = await api(`${API_URL}/${id}`);
+            if (todo) {
+                await api(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ ...todo, completed })
+                });
+                loadTodos();
+            }
+        }
 
-        // ページロード後に初期データを読み込む
+        // TODOの削除
+        async function deleteTodo(id) {
+            if (confirm('このTODOを削除してもよろしいですか？')) {
+                await api(`${API_URL}/${id}`, { method: 'DELETE' });
+                loadTodos();
+            }
+        }
+
+        // 初期化処理
         document.addEventListener('DOMContentLoaded', () => {
-            loadPlaces();
-            loadWishlist();
+            loadTodos();
 
-            document.getElementById('placeForm').addEventListener('submit', e => {
+            document.getElementById('todoForm').addEventListener('submit', e => {
                 e.preventDefault();
-                addPlace();
-            });
+                const todoData = {
+                    date: document.getElementById('todoDate').value,
+                    destination: document.getElementById('todoDestination').value,
+                    location: document.getElementById('todoLocation').value,
+                    title: document.getElementById('todoInput').value,
+                    completed: false
+                };
 
-            document.getElementById('wishlistForm').addEventListener('submit', e => {
-                e.preventDefault();
-                addWishlistItem();
+                addTodo(todoData);
+                e.target.reset();
             });
         });
     </script>
 </body>
-
 </html>
