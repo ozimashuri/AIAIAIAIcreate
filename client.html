@@ -72,6 +72,14 @@
             <input type="text" id="todoLocation" required>
         </div>
         <div class="form-group">
+            <label for="todoStarttime">開始時刻:</label>
+            <input type="time" id="todostarttime" required>
+        </div>
+        <div class="form-group">
+            <label for="todoTotaltime">所要時間:</label>
+            <input type="datetime-local" id="todototaltime" required>
+        </div>
+        <div class="form-group">
             <label for="todoInput">やること:</label>
             <input type="text" id="todoInput" required>
         </div>
@@ -109,6 +117,8 @@
                         <p><strong>日付:</strong> ${todo.date}</p>
                         <p><strong>行先:</strong> ${todo.destination}</p>
                         <p><strong>場所:</strong> ${todo.location}</p>
+                        <p><strong>開始時間:</strong> ${todo.starttime}</p>
+                        <p><strong>所要時間:</strong> ${todo.totaltime}</p>
                         <p class="${todo.completed ? 'completed' : ''}">
                             <strong>やること:</strong> ${todo.title}
                         </p>
@@ -171,6 +181,8 @@
                     date: document.getElementById('todoDate').value,
                     destination: document.getElementById('todoDestination').value,
                     location: document.getElementById('todoLocation').value,
+                    starttime: document.getElementById('todostarttime').value,
+                    totaltime: document.getElementById('todototaltime').value,
                     title: document.getElementById('todoInput').value,
                     completed: false
                 };

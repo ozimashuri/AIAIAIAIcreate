@@ -55,6 +55,8 @@ def init_db():
                 date TEXT NOT NULL,
                 destination TEXT NOT NULL,
                 location TEXT NOT NULL,
+                starttime TEXT NOT NULL,
+                totaltime TEXT NOT NULL,
                 title TEXT NOT NULL,
                 completed BOOLEAN DEFAULT 0
             )
@@ -68,6 +70,8 @@ class TravelTodo(BaseModel):
     date: str
     destination: str
     location: str
+    starttime: str
+    totaltime: str
     title: str
     completed: Optional[bool] = False
 
@@ -89,10 +93,10 @@ async def create_todo(todo: TravelTodo):
             cursor = conn.execute(
                 f"""
                 INSERT INTO {TABLE_NAME} 
-                (date, destination, location, title, completed) 
-                VALUES (?, ?, ?, ?, ?)
+                (date, destination, location, starttime, totaltime, title, completed) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (todo.date, todo.destination, todo.location, 
+                (todo.date, todo.destination, todo.location, todo.starttime, todo.totaltime,
                  todo.title, todo.completed)
             )
             conn.commit()
@@ -102,6 +106,8 @@ async def create_todo(todo: TravelTodo):
                 "date": todo.date,
                 "destination": todo.destination,
                 "location": todo.location,
+                "starttime": todo.starttime,
+                "totaltime": todo.totaltime,
                 "title": todo.title,
                 "completed": todo.completed
             }
@@ -128,8 +134,10 @@ async def get_todos():
                 "date": t[1],
                 "destination": t[2],
                 "location": t[3],
-                "title": t[4],
-                "completed": bool(t[5])
+                "starttime": t[4],
+                "totaltime": t[5],
+                "title": t[6],
+                "completed": bool(t[7])
             } for t in todos]
     except Exception as e:
         print(f"Error getting todos: {e}")
